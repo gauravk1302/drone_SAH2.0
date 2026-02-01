@@ -1,14 +1,15 @@
-from flask import Flask, request
-import json
+from flask import Flask, request, jsonify
+from main import run_drone_simulation  # wrap your logic in a function
 
 app = Flask(__name__)
 
-@app.route('/set_coords', methods=['POST'])
-def set_coords():
+@app.route('/simulate', methods=['POST'])
+def simulate():
     data = request.json
-    with open("coords.json", "w") as f:
-        json.dump(data, f)
-    return "Coordinates received", 200
+    start = data['start']
+    end = data['end']
+    result = run_drone_simulation(start, end)
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True)

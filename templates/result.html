@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><title>Drone Result</title></head>
+<body>
+  <h2>Simulation Result</h2>
+  <p>✅ Goal Reached: {{ result.goal_reached }}</p>
+  <p>🔋 Energy Left: {{ result.energy }}</p>
+  <p>📊 Coverage: {{ result.coverage }}%</p>
+  <img src="/static/path.png" width="500"><br>
+  <img src="/static/heatmap.png" width="500"><br>
+  <a href="/">Run Another Simulation</a>
+</body>
+</html>
