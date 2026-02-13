@@ -1,14 +1,98 @@
 <!DOCTYPE html>
-<html>
-<head><title>Drone Simulator</title></head>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drone Path Planner</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background: #0f0f0f;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background: #1a1a1a;
+  padding: 40px;
+  width: 400px;
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(0,255,255,0.1);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #111;
+  color: white;
+  outline: none;
+  transition: 0.3s;
+}
+
+input:focus {
+  border-color: #00ffff;
+  box-shadow: 0 0 10px #00ffff44;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(45deg, #00ffff, #0077ff);
+  border: none;
+  border-radius: 8px;
+  color: black;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 15px #00ffff88;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 12px;
+  color: #777;
+}
+</style>
+</head>
+
 <body>
-  <h2>Drone Path Planner</h2>
+<div class="container">
+  <h2>🚁 Drone Path Planner</h2>
   <form method="POST">
-    <input name="start_lat" placeholder="Start Latitude" required><br>
-    <input name="start_lon" placeholder="Start Longitude" required><br>
-    <input name="end_lat" placeholder="End Latitude" required><br>
-    <input name="end_lon" placeholder="End Longitude" required><br>
+    <input name="start_lat" placeholder="Start Latitude" required>
+    <input name="start_lon" placeholder="Start Longitude" required>
+    <input name="end_lat" placeholder="End Latitude" required>
+    <input name="end_lon" placeholder="End Longitude" required>
     <button type="submit">Run Simulation</button>
   </form>
+  <div class="footer">Production Grid • Black Edition</div>
+</div>
 </body>
 </html>

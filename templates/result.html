@@ -1,13 +1,129 @@
 <!DOCTYPE html>
-<html>
-<head><title>Drone Result</title></head>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drone Result</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background: #0f0f0f;
+  color: #fff;
+  padding: 40px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.dashboard {
+  max-width: 1000px;
+  margin: auto;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.card {
+  flex: 1;
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0,255,255,0.1);
+}
+
+.card h3 {
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #aaa;
+}
+
+.card p {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.images {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.images img {
+  width: 450px;
+  border-radius: 12px;
+  box-shadow: 0 0 25px rgba(0,255,255,0.15);
+}
+
+.button-container {
+  text-align: center;
+  margin-top: 30px;
+}
+
+a {
+  text-decoration: none;
+  padding: 12px 20px;
+  background: linear-gradient(45deg, #00ffff, #0077ff);
+  border-radius: 8px;
+  color: black;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+a:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px #00ffff88;
+}
+</style>
+</head>
+
 <body>
-  <h2>Simulation Result</h2>
-  <p>✅ Goal Reached: {{ result.goal_reached }}</p>
-  <p>🔋 Energy Left: {{ result.energy }}</p>
-  <p>📊 Coverage: {{ result.coverage }}%</p>
-  <img src="/static/path.png" width="500"><br>
-  <img src="/static/heatmap.png" width="500"><br>
-  <a href="/">Run Another Simulation</a>
+<h2>🚁 Simulation Result</h2>
+
+<div class="dashboard">
+
+  <div class="stats">
+    <div class="card">
+      <h3>Goal Status</h3>
+      <p>✅ {{ result.goal_reached }}</p>
+    </div>
+
+    <div class="card">
+      <h3>Energy Left</h3>
+      <p>🔋 {{ result.energy }}</p>
+    </div>
+
+    <div class="card">
+      <h3>Coverage</h3>
+      <p>📊 {{ result.coverage }}%</p>
+    </div>
+  </div>
+
+  <div class="images">
+    <img src="/static/path.png">
+    <img src="/static/heatmap.png">
+  </div>
+
+  <div class="button-container">
+    <a href="/">Run Another Simulation</a>
+  </div>
+
+</div>
 </body>
 </html>
