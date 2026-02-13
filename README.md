@@ -1,4 +1,4 @@
-# 🛸 Drone Path Planner
+# 🚁 Drone Path Planner
 
 ## 🚀 Overview
 A smart drone simulation that navigates a grid, avoids obstacles, and optimizes energy usage using A* path planning.
