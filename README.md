@@ -19,7 +19,10 @@ A smart drone simulation that navigates a grid, avoids obstacles, and optimizes 
 - ✅ Visual path output
 
 ## 🖼️ Demo
-![Drone Path Visualization](your_screenshot_here)
+![WhatsApp Image 2026-02-13 at 9 45 01 PM](https://github.com/user-attachments/assets/ec801a94-7bd4-44a8-8219-eb0e060b912f)
+![WhatsApp Image 2026-02-13 at 9 45 26 PM](https://github.com/user-attachments/assets/da540d10-227d-4e4c-9ac9-d864b110c414)
+
+
 
 ## ▶️ How to Run
 ```bash
