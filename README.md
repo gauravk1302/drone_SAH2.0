@@ -23,4 +23,4 @@ A smart drone simulation that navigates a grid, avoids obstacles, and optimizes 
 
 ## ▶️ How to Run
 ```bash
-python main.py
+python app.py
