@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GARUDA-OPS // SWARM COMMAND</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g:#00f5a0;--b:#00d4ff;--gd:#ffd700;--o:#ff8c00;--r:#ff4466;--pu:#a855f7;
+  --bg:#04060f;--pan:#07091a;--bdr:#1a2540;--tx:#6080a0;--tx2:#80a0c0;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--tx2);font-family:"Share Tech Mono",monospace;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,212,255,.004) 3px,rgba(0,212,255,.004) 4px)}
+
+@keyframes shimmer{from{background-position:0%}to{background-position:200%}}
+@keyframes dpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.15;transform:scale(.4)}}
+@keyframes glowIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes rtbPulse{0%,100%{border-color:var(--o);box-shadow:0 0 8px rgba(255,140,0,.2)}50%{border-color:rgba(255,140,0,.3);box-shadow:none}}
+@keyframes homePulse{0%,100%{border-color:var(--pu);box-shadow:0 0 8px rgba(168,85,247,.2)}50%{border-color:rgba(168,85,247,.3);box-shadow:none}}
+@keyframes rechargePulse{0%,100%{border-color:var(--b);box-shadow:0 0 8px rgba(0,212,255,.2)}50%{border-color:rgba(0,212,255,.3);box-shadow:none}}
+
+/* ── HEADER ── */
+header{padding:8px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(90deg,#020309,var(--pan));flex-shrink:0;z-index:50}
+.logo{font-family:"Orbitron",sans-serif;font-weight:900;font-size:13px;letter-spacing:5px;background:linear-gradient(90deg,var(--g),var(--b),var(--gd));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 5s linear infinite}
+.hdr-r{display:flex;align-items:center;gap:10px;font-size:8px;letter-spacing:2px;color:var(--tx)}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--g);box-shadow:0 0 7px var(--g);display:inline-block;animation:dpulse 1.4s infinite}
+.hbtn{padding:4px 10px;background:transparent;border:1px solid var(--b);color:var(--b);font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:1px;cursor:pointer;border-radius:2px;transition:all .2s}
+.hbtn:hover{background:var(--b);color:var(--bg)}
+.hbtn.active{background:rgba(255,68,102,.15);border-color:var(--r);color:var(--r)}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:195px 1fr 210px;flex:1;min-height:0}
+.lp,.rp{padding:10px;display:flex;flex-direction:column;gap:10px;background:var(--pan);overflow-y:auto}
+.lp{border-right:1px solid var(--bdr)}
+.rp{border-left:1px solid var(--bdr)}
+.lp::-webkit-scrollbar,.rp::-webkit-scrollbar{width:2px}
+.lp::-webkit-scrollbar-thumb,.rp::-webkit-scrollbar-thumb{background:var(--bdr)}
+
+.sec-title{font-family:"Orbitron",sans-serif;font-size:7px;letter-spacing:3px;color:var(--b);border-bottom:1px solid var(--bdr);padding-bottom:5px;margin-bottom:4px}
+.kv{display:flex;justify-content:space-between;align-items:center;font-size:9px;padding:2px 0;color:var(--tx)}
+.val{font-size:11px;font-weight:bold}
+.vg{color:var(--g);text-shadow:0 0 8px rgba(0,245,160,.35)}
+.vb{color:var(--b);text-shadow:0 0 8px rgba(0,212,255,.35)}
+.vgd{color:var(--gd);text-shadow:0 0 8px rgba(255,215,0,.35)}
+.vo{color:var(--o)}
+.vr{color:var(--r)}
+.vpu{color:var(--pu)}
+
+/* ── DRONE CARDS ── */
+.dcard{border:1px solid var(--bdr);border-radius:3px;padding:8px;transition:border-color .4s,box-shadow .4s}
+.dcard.rtb{animation:rtbPulse 1s infinite}
+.dcard.returning{animation:homePulse 1s infinite}
+.dcard.recharging{animation:rechargePulse 1.2s infinite}
+.dcard.done{opacity:.3;border-color:var(--bdr)!important}
+.dcard-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.dname{font-family:"Orbitron",sans-serif;font-size:8px;font-weight:700;letter-spacing:2px}
+.badge{font-size:7px;padding:2px 6px;border:1px solid;border-radius:2px;letter-spacing:1px}
+.battbar{width:100%;height:7px;background:#08102a;border:1px solid var(--bdr);border-radius:2px;overflow:hidden;margin-top:3px}
+.battfill{height:100%;border-radius:2px;transition:width .5s,background .6s,box-shadow .6s}
+
+/* ── BUTTONS ── */
+.btn{padding:7px 10px;background:transparent;border:1px solid;font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;cursor:pointer;width:100%;position:relative;overflow:hidden;border-radius:2px;transition:letter-spacing .25s,box-shadow .25s}
+.btn::before{content:"";position:absolute;inset:0;transform:translateX(-101%);transition:transform .25s;z-index:0}
+.btn:hover::before{transform:translateX(0)}
+.btn:hover{letter-spacing:3px}
+.btn span{position:relative;z-index:1}
+.bg{border-color:var(--g);color:var(--g)}.bg::before{background:var(--g)}.bg:hover{color:var(--bg)!important;box-shadow:0 0 20px rgba(0,245,160,.2)}
+.bb{border-color:var(--b);color:var(--b)}.bb::before{background:var(--b)}.bb:hover{color:var(--bg)!important;box-shadow:0 0 20px rgba(0,212,255,.2)}
+.bgd{border-color:var(--gd);color:var(--gd)}.bgd::before{background:var(--gd)}.bgd:hover{color:var(--bg)!important}
+.bo{border-color:var(--o);color:var(--o)}.bo::before{background:var(--o)}.bo:hover{color:var(--bg)!important}
+.br{border-color:var(--r);color:var(--r)}.br::before{background:var(--r)}.br:hover{color:var(--bg)!important}
+.bpu{border-color:var(--pu);color:var(--pu)}.bpu::before{background:var(--pu)}.bpu:hover{color:var(--bg)!important}
+.btn:disabled{opacity:.2;cursor:not-allowed;pointer-events:none}
+.btn-row{display:flex;gap:5px}.btn-row .btn{flex:1}
+
+input[type=range]{width:100%;-webkit-appearance:none;height:2px;background:var(--bdr);outline:none;margin-top:5px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--b);box-shadow:0 0 6px var(--b)}
+
+.cnt-row{display:flex;gap:4px}
+.cnt-btn{flex:1;padding:5px 0;background:transparent;border:1px solid var(--bdr);color:var(--tx);font-family:"Share Tech Mono",monospace;font-size:11px;cursor:pointer;border-radius:2px;transition:all .2s}
+.cnt-btn.on{background:linear-gradient(135deg,var(--b),var(--pu));border-color:var(--b);color:#fff;box-shadow:0 0 12px rgba(0,212,255,.3)}
+
+/* ── CENTER MAP AREA ── */
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background:radial-gradient(ellipse at 50% 38%,#080f20,var(--bg))}
+.map-wrap{position:relative}
+.map-corner{position:absolute;width:12px;height:12px;pointer-events:none;z-index:5}
+.mc-tl{top:-1px;left:-1px;border-top:2px solid var(--b);border-left:2px solid var(--b)}
+.mc-tr{top:-1px;right:-1px;border-top:2px solid var(--b);border-right:2px solid var(--b)}
+.mc-bl{bottom:-1px;left:-1px;border-bottom:2px solid var(--gd);border-left:2px solid var(--gd)}
+.mc-br{bottom:-1px;right:-1px;border-bottom:2px solid var(--gd);border-right:2px solid var(--gd)}
+#gc{display:block;border:1px solid var(--bdr)}
+
+.top-tag{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-family:"Orbitron",sans-serif;font-size:7px;letter-spacing:3px;color:var(--tx);white-space:nowrap;pointer-events:none}
+.cbar{font-size:8px;letter-spacing:1px;color:var(--tx);margin-top:6px;text-align:center;min-height:15px}
+
+/* ── HINT ── */
+.hintbox{position:absolute;top:28px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:50}
+.hint{font-family:"Orbitron",sans-serif;font-size:8px;letter-spacing:2px;padding:4px 14px;white-space:nowrap;border:1px solid;border-radius:2px;animation:fadeUp .25s ease}
+.hint-obs{background:rgba(255,140,0,.12);border-color:var(--o);color:var(--o)}
+.hint-al{background:rgba(255,68,102,.12);border-color:var(--r);color:var(--r)}
+.hint-inf{background:rgba(0,212,255,.08);border-color:var(--b);color:var(--b)}
+.hint-mem{background:rgba(168,85,247,.08);border-color:var(--pu);color:var(--pu)}
+.hint-ok{background:rgba(0,245,160,.08);border-color:var(--g);color:var(--g)}
+
+/* ── EDITOR BAR ── */
+.edbar{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);display:none;gap:6px;align-items:center;background:rgba(7,9,26,.96);border:1px solid var(--bdr);padding:6px 12px;z-index:20;border-radius:3px}
+.tbtn{padding:4px 10px;background:transparent;border:1px solid;font-family:"Share Tech Mono",monospace;font-size:8px;cursor:pointer;border-radius:2px;transition:all .2s}
+.t-obs{border-color:var(--r);color:var(--r)}.t-obs.on{background:var(--r);color:#000}
+.t-nfz{border-color:var(--o);color:var(--o)}.t-nfz.on{background:var(--o);color:#000}
+.t-era{border-color:var(--b);color:var(--b)}.t-era.on{background:var(--b);color:#000}
+.t-clr{border-color:var(--r);color:var(--r)}
+
+/* ── DONE OVERLAY ── */
+.done-ov{position:absolute;inset:0;background:rgba(4,6,15,.95);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:200}
+.done-ov.show{display:flex}
+.done-title{font-family:"Orbitron",sans-serif;font-size:18px;font-weight:900;letter-spacing:7px;background:linear-gradient(90deg,var(--g),var(--b),var(--gd));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 2s linear infinite}
+.done-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 22px;font-size:10px;color:var(--tx)}
+.done-grid b{color:var(--g)}
+.done-note{font-size:9px;color:var(--pu)}
+.done-btns{display:flex;gap:10px}.done-btns .btn{min-width:120px}
+
+/* ── MISSION HISTORY ── */
+.mhrow{display:flex;align-items:center;gap:5px;font-size:8px;color:var(--tx)}
+.mhtrack{flex:1;height:5px;background:#08102a;border-radius:2px;overflow:hidden}
+.mhfill{height:100%;border-radius:2px;transition:width 1.2s ease}
+
+/* ── EVENT LOG ── */
+.elog{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.elog::-webkit-scrollbar{width:2px}
+.elog::-webkit-scrollbar-thumb{background:var(--bdr)}
+.ei{font-size:8px;padding:2px 6px;border-left:2px solid;line-height:1.5;animation:glowIn .2s ease}
+.ei.al{border-color:var(--r);color:rgba(255,68,102,.8)}
+.ei.inf{border-color:var(--b);color:rgba(0,212,255,.7)}
+.ei.mem{border-color:var(--pu);color:rgba(168,85,247,.8)}
+.ei.ok{border-color:var(--g);color:rgba(0,245,160,.8)}
+.ei.w{border-color:var(--gd);color:rgba(255,215,0,.8)}
+
+/* ── LEGEND ── */
+.legend-item{display:flex;align-items:center;gap:7px;font-size:8px;color:var(--tx);line-height:1.4}
+.legend-dot{width:11px;height:11px;border-radius:2px;flex-shrink:0}
+
+/* ── COORD MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--pan);border:1px solid rgba(0,212,255,.28);border-radius:5px;padding:28px 32px;min-width:460px;position:relative;box-shadow:0 0 80px rgba(0,212,255,.1)}
+.modal::before{content:"";position:absolute;top:-1px;left:-1px;width:14px;height:14px;border-top:2px solid var(--b);border-left:2px solid var(--b)}
+.modal::after{content:"";position:absolute;bottom:-1px;right:-1px;width:14px;height:14px;border-bottom:2px solid var(--gd);border-right:2px solid var(--gd)}
+.modal-t{font-family:"Orbitron",sans-serif;font-size:11px;letter-spacing:4px;background:linear-gradient(90deg,var(--b),var(--g));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:3px}
+.modal-s{font-size:8px;letter-spacing:2px;color:var(--tx);margin-bottom:18px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.mfield label{font-size:8px;letter-spacing:2px;color:var(--tx);display:block;margin-bottom:5px}
+.mfield input{width:100%;background:#020408;border:1px solid var(--bdr);color:var(--b);font-family:"Share Tech Mono",monospace;font-size:13px;padding:7px 9px;outline:none;border-radius:2px;transition:border-color .2s}
+.mfield input:focus{border-color:var(--b)}
+.preset-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.preset-btn{padding:3px 9px;background:transparent;border:1px solid var(--bdr);color:var(--tx2);font-family:"Share Tech Mono",monospace;font-size:8px;cursor:pointer;border-radius:2px;transition:all .2s}
+.preset-btn:hover{border-color:var(--b);color:var(--b)}
+.preset-btn.danger{border-color:var(--r);color:var(--r)}
+.preset-btn.danger:hover{background:var(--r);color:#fff}
+.preview-box{background:#020408;border:1px solid var(--bdr);padding:10px 12px;margin-bottom:14px;font-size:9px;color:var(--tx);line-height:2;border-radius:2px}
+.preview-box .pk{color:var(--b)}
+.mbtns{display:flex;gap:8px}.mbtns .btn{flex:1;padding:9px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">🦅 GARUDA-OPS // AUTONOMOUS 3D SWARM SURVEILLANCE COMMAND</div>
+  <div class="hdr-r">
+    <span><span class="ldot"></span>ONLINE</span>
+    <span id="clk">--:--:--</span>
+    <span id="msnTag" style="padding:2px 8px;border:1px solid var(--bdr);font-size:8px;">MISSION 1</span>
+    <button class="hbtn" onclick="openCoord()">⊕ COORDINATES</button>
+    <button class="hbtn" id="editBtn" onclick="toggleEdit()">✏ EDIT MAP</button>
+  </div>
+</header>
+
+<div class="layout">
+<!-- ══ LEFT PANEL ══ -->
+<div class="lp">
+  <div>
+    <div class="sec-title">◈ GARUDA SWARM STATUS</div>
+    <div class="kv"><span>ACTIVE DRONES</span><span class="val vb" id="vAct">0</span></div>
+    <div class="kv"><span>COVERAGE</span><span class="val vg" id="vCov">0%</span></div>
+    <div class="kv"><span>FOG CLEARED</span><span class="val vb" id="vFog">0%</span></div>
+    <div class="kv"><span>REPLANNINGS</span><span class="val vgd" id="vRep">0</span></div>
+    <div class="kv"><span>RL OBSTACLES</span><span class="val vpu" id="vObs">0</span></div>
+  </div>
+
+  <div>
+    <div class="sec-title">◈ DRONE COUNT</div>
+    <div class="cnt-row" id="cntRow">
+      <button class="cnt-btn" onclick="setN(1)">1</button>
+      <button class="cnt-btn on" onclick="setN(2)">2</button>
+      <button class="cnt-btn" onclick="setN(3)">3</button>
+      <button class="cnt-btn" onclick="setN(4)">4</button>
+    </div>
+    <div style="font-size:7px;color:var(--tx);margin-top:4px;line-height:1.5">Sectors auto-divided per drone</div>
+  </div>
+
+  <div id="droneCards"></div>
+
+  <div>
+    <div class="sec-title">◈ Q-LEARNING INTELLIGENCE</div>
+    <div class="kv"><span>KNOWN OBS</span><span class="val vpu" id="vKO">0</span></div>
+    <div class="kv"><span>DANGER ZONES</span><span class="val vo" id="vDZ">0</span></div>
+    <div class="kv"><span>Q-STATES</span><span class="val vb" id="vQS">0</span></div>
+    <div class="kv"><span>EPSILON ε</span><span class="val vgd" id="vEps">0.90</span></div>
+  </div>
+
+  <div>
+    <div class="sec-title">◈ SIMULATION SPEED</div>
+    <input type="range" id="spdSlider" min="1" max="10" value="5" oninput="onSpeedChange()">
+    <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--tx);margin-top:3px">
+      <span>SLOW</span>
+      <span id="spdDisplay" style="color:var(--b);letter-spacing:1px">— km/h</span>
+      <span>FAST</span>
+    </div>
+  </div>
+
+  <div style="margin-top:auto;display:flex;flex-direction:column;gap:5px">
+    <button class="btn bg" id="launchBtn" onclick="doLaunch()"><span>▶ LAUNCH GARUDA SWARM</span></button>
+    <div class="btn-row">
+      <button class="btn bb" id="pauseBtn" onclick="togglePause()" disabled><span id="pauseTxt">⏸ PAUSE</span></button>
+      <button class="btn bgd" id="nextBtn" onclick="nextMission()" disabled><span>↗ NEXT MSN</span></button>
+    </div>
+    <button class="btn bo" id="obsBtn" onclick="toggleObsMode()"><span>🎯 PLACE OBSTACLE</span></button>
+    <button class="btn br" onclick="fullReset()"><span>↺ FULL RESET</span></button>
+  </div>
+</div>
+
+<!-- ══ CENTER MAP ══ -->
+<div class="center">
+  <div class="top-tag" id="topTag">GARUDA-OPS // BOUSTROPHEDON + A* + Q-LEARNING // FOG + RTB + RETURN-HOME</div>
+  <div class="hintbox" id="hintBox"></div>
+
+  <div class="map-wrap" id="mapWrap">
+    <div class="map-corner mc-tl"></div>
+    <div class="map-corner mc-tr"></div>
+    <div class="map-corner mc-bl"></div>
+    <div class="map-corner mc-br"></div>
+    <canvas id="gc"></canvas>
+
+    <div class="edbar" id="edbar">
+      <span style="font-size:8px;color:var(--tx);letter-spacing:1px">DRAW:</span>
+      <button class="tbtn t-obs" id="tObs" onclick="setTool('obs')">■ OBSTACLE</button>
+      <button class="tbtn t-nfz on" id="tNfz" onclick="setTool('nfz')">▨ NO-FLY</button>
+      <button class="tbtn t-era" id="tEra" onclick="setTool('era')">✕ ERASE</button>
+      <button class="tbtn t-clr" onclick="clearEdits()" style="margin-left:4px">CLEAR ALL</button>
+    </div>
+
+    <div class="done-ov" id="doneOv">
+      <div class="done-title">◈ MISSION COMPLETE ◈</div>
+      <div class="done-grid" id="doneGrid"></div>
+      <div class="done-note" id="doneNote"></div>
+      <div class="done-btns">
+        <button class="btn bb" onclick="nextMission()"><span>↗ NEXT MISSION</span></button>
+        <button class="btn br" onclick="fullReset()"><span>↺ RESET ALL</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cbar" id="cbar">[ ZONE: NEW DELHI | LAT: 28.6139°N | LON: 77.2090°E | ALT: 120m ]</div>
+</div>
+
+<!-- ══ RIGHT PANEL ══ -->
+<div class="rp">
+  <div>
+    <div class="sec-title">◈ MISSION HISTORY</div>
+    <div id="mhist"><div style="font-size:8px;color:var(--tx)">No missions completed</div></div>
+  </div>
+
+  <div>
+    <div class="sec-title">◈ DANGER HEATMAP</div>
+    <canvas id="heatCanvas" width="188" height="188" style="display:block;border:1px solid var(--bdr);border-radius:2px"></canvas>
+    <div id="heatSub" style="font-size:7px;letter-spacing:1px;color:var(--tx);margin-top:4px;min-height:10px;text-align:center">NO THREAT DATA YET</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:7px;color:var(--tx);margin-top:3px">
+      <span style="color:var(--g)">● SAFE</span>
+      <div style="flex:1;height:3px;margin:0 5px;background:linear-gradient(90deg,#010c05,#ff8c00,#ff4466);border-radius:2px"></div>
+      <span style="color:var(--r)">■ OBS</span>
+    </div>
+    <div style="font-size:7px;color:var(--tx);margin-top:2px;line-height:1.6">
+      <span style="color:rgba(255,68,102,.6)">■</span> = known obstacle &nbsp;
+      <span style="color:rgba(255,140,0,.6)">■</span> = danger zone
+    </div>
+  </div>
+
+  <div>
+    <div class="sec-title">◈ LEGEND</div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div class="legend-item"><div class="legend-dot" style="background:#0a1225;border:1px solid rgba(255,255,255,.06)"></div>FOG (HIDDEN)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#001508;border:1px solid rgba(0,245,160,.12)"></div>VISITED</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,68,102,.25);border:1px solid var(--r)"></div>OBSTACLE</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,140,0,.08);border:1px solid var(--o)"></div>NO-FLY ZONE</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,68,102,.15);border:1px dashed var(--r)"></div>RL DANGER</div>
+      <div class="legend-item"><div class="legend-dot" style="border-radius:50%;background:var(--gd)"></div>GARUDA (active)</div>
+      <div class="legend-item"><div class="legend-dot" style="border-radius:50%;background:var(--o)"></div>RTB (low battery)</div>
+      <div class="legend-item"><div class="legend-dot" style="border-radius:50%;background:var(--pu)"></div>RETURNING HOME</div>
+      <div class="legend-item"><div class="legend-dot" style="border-radius:50%;background:var(--b)"></div>RECHARGING</div>
+    </div>
+  </div>
+
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div class="sec-title">◈ MISSION LOG</div>
+    <div class="elog" id="elog"></div>
+  </div>
+</div>
+</div><!-- end layout -->
+
+<!-- COORD MODAL -->
+<div class="modal-bg" id="coordModal">
+  <div class="modal">
+    <!-- NEXT MISSION BANNER — shown when accessed via "Next Mission" -->
+    <div id="coordNextBanner" style="display:none;align-items:center;gap:10px;background:rgba(0,245,160,.07);border:1px solid rgba(0,245,160,.22);border-radius:3px;padding:8px 12px;margin-bottom:16px">
+      <span style="font-size:16px">🦅</span>
+      <div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:3px;color:var(--g)">MISSION <span id="coordMsnNum">2</span> — SELECT NEW ZONE</div>
+        <div style="font-size:7px;color:rgba(0,245,160,.55);margin-top:2px;letter-spacing:1px">RL MEMORY PRESERVED · Q-TABLE ACTIVE · OBSTACLES REMEMBERED</div>
+      </div>
+    </div>
+    <div class="modal-t">◈ SURVEILLANCE ZONE SETUP</div>
+    <div class="modal-s">DEFINE TARGET AREA — GARUDA SWARM WILL SYSTEMATICALLY MAP THIS REGION</div>
+    <div class="mgrid">
+      <div class="mfield"><label>CENTER LATITUDE °</label><input id="iLat" type="number" step="0.001" value="28.6139" oninput="updPreview()"></div>
+      <div class="mfield"><label>CENTER LONGITUDE °</label><input id="iLng" type="number" step="0.001" value="77.2090" oninput="updPreview()"></div>
+      <div class="mfield"><label>SCAN RADIUS (km)</label><input id="iRad" type="number" step="0.5" min="0.5" max="50" value="2" oninput="updPreview()"></div>
+      <div class="mfield"><label>ALTITUDE (m AGL)</label><input id="iAlt" type="number" step="10" min="50" max="500" value="120" oninput="updPreview()"></div>
+    </div>
+    <div style="font-size:8px;letter-spacing:2px;color:var(--tx);margin-bottom:7px">QUICK PRESETS</div>
+    <div class="preset-row">
+      <button class="preset-btn" onclick="setPreset(28.6139,77.2090)">NEW DELHI</button>
+      <button class="preset-btn" onclick="setPreset(19.076,72.8777)">MUMBAI</button>
+      <button class="preset-btn" onclick="setPreset(12.9716,77.5946)">BENGALURU</button>
+      <button class="preset-btn" onclick="setPreset(26.9124,75.7873)">JAIPUR</button>
+      <button class="preset-btn danger" onclick="setPreset(32.7266,74.857)">⚠ BORDER ZONE</button>
+      <button class="preset-btn danger" onclick="setPreset(34.0151,74.791)">⚠ KASHMIR</button>
+    </div>
+    <div class="preview-box">
+      <div><span class="pk">▸ CENTER  :</span> <span id="pLL">28.6139°N, 77.2090°E</span></div>
+      <div><span class="pk">▸ AREA    :</span> <span id="pArea">4.0 × 4.0 km</span></div>
+      <div><span class="pk">▸ CELL SZ :</span> <span id="pCell">~200 × 200 m</span></div>
+      <div><span class="pk">▸ ALTITUDE:</span> <span id="pAlt">120 m AGL</span></div>
+    </div>
+    <div class="mbtns">
+      <button class="btn bb" onclick="applyCoord()"><span>✓ APPLY & LAUNCH MISSION</span></button>
+      <button class="btn" style="border-color:rgba(255,68,102,.4);color:rgba(255,68,102,.7);max-width:90px" onclick="resetMemoryAndApply()"><span>↺ RESET MEM</span></button>
+      <button class="btn" style="border-color:var(--bdr);color:var(--tx);max-width:40px" onclick="closeCoord()"><span>✕</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CORE CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const ROWS=20, COLS=20;
+const FREE=0, OBS=1, NOFLY=2, START=3, VISITED=4;
+const DIRS=[[-1,0],[1,0],[0,-1],[0,1]];
+const DRONE_COLORS=['#ffd700','#00d4ff','#ff4466','#a855f7'];
+const DRONE_NAMES=['GARUDA-1','GARUDA-2','GARUDA-3','GARUDA-4'];
+const ALPHA=0.3, GAMMA=0.9, EPS0=0.9, EPS_DECAY=0.3, EPS_MIN=0.05;
+const RTB_THRESHOLD=0.12, FOG_RADIUS=3, MAX_BATT=1200;
+const RECHARGE_STEPS=40;
+// Battery cost per step (ACTIVE=0.5, RTB=0.6, RETURNING=0.4)
+// With MAX_BATT=1200 and RTB at 12%, drone can cover ~1000 steps before RTB
+
+// ═══════════════════════════════════════════════════════════
+// ZONE CONFIG
+// ═══════════════════════════════════════════════════════════
+const Z = { lat:28.6139, lng:77.2090, rad:2, alt:120,
+  latPerCell(){return(this.rad*2/ROWS)/111},
+  lngPerCell(){return(this.rad*2/COLS)/(111*Math.cos(this.lat*Math.PI/180))},
+  cellLatLng(r,c){
+    return {
+      lat: (this.lat+this.rad/111) - r*this.latPerCell(),
+      lng: (this.lng - this.rad/(111*Math.cos(this.lat*Math.PI/180))) + c*this.lngPerCell()
+    };
+  }
+};
+const fmtCoord = (v, isLat) => `${Math.abs(v).toFixed(4)}°${isLat?(v>=0?'N':'S'):(v>=0?'E':'W')}`;
+
+// ═══════════════════════════════════════════════════════════
+// RL MEMORY (persists across missions)
+// ═══════════════════════════════════════════════════════════
+const MEM = {
+  Q: {}, danger: {}, knownObs: [], msnHistory: [],
+  getQ(r,c,a){ const k=`${r},${c}`; if(!this.Q[k])this.Q[k]=[0,0,0,0]; return this.Q[k][a]; },
+  setQ(r,c,a,v){ const k=`${r},${c}`; if(!this.Q[k])this.Q[k]=[0,0,0,0]; this.Q[k][a]=v; },
+  getDanger(r,c){ return this.danger[`${r},${c}`]||0; },
+  learnObstacle(r,c){
+    if(!this.knownObs.find(o=>o[0]===r&&o[1]===c)) this.knownObs.push([r,c]);
+    for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
+      const nr=r+dr, nc=c+dc;
+      if(nr<0||nr>=ROWS||nc<0||nc>=COLS) continue;
+      const d=Math.sqrt(dr*dr+dc*dc);
+      const k=`${nr},${nc}`;
+      this.danger[k]=(this.danger[k]||0)+60/(d+0.5);
+    }
+  },
+  qSize(){ return Object.keys(this.Q).length; },
+  dangerCells(){ return Object.keys(this.danger).length; },
+  reset(){ this.Q={}; this.danger={}; this.knownObs=[]; this.msnHistory=[]; }
+};
+
+// ═══════════════════════════════════════════════════════════
+// GRID MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+let baseGrid=[], liveGrid=[], fogGrid=[], userPaints=[];
+
+function buildBaseGrid(){
+  const g=Array.from({length:ROWS},()=>new Array(COLS).fill(FREE));
+  g[0][0]=START;
+  // Static no-fly zones
+  for(let r=5;r<9;r++) for(let c=10;c<14;c++) g[r][c]=NOFLY;
+  for(let r=14;r<18;r++) for(let c=3;c<7;c++) g[r][c]=NOFLY;
+  // Static obstacles
+  [[2,5],[2,6],[3,5],[3,6],[8,2],[8,3],[9,2],[9,3],[12,15],[13,15],[12,16],
+   [1,18],[2,18],[3,18],[4,18],[17,12],[17,13],[18,12],[6,18],[7,18],[7,17]]
+  .forEach(([r,c])=>g[r][c]=OBS);
+  // Apply user paints (editor)
+  userPaints.forEach(([r,c,t])=>{
+    if(r===0&&c===0) return;
+    g[r][c] = t==='obs'?OBS : t==='nfz'?NOFLY : FREE;
+  });
+  return g;
+}
+
+function buildFogGrid(){ return Array.from({length:ROWS},()=>new Array(COLS).fill(true)); }
+
+function revealFog(r,c){
+  for(let dr=-FOG_RADIUS;dr<=FOG_RADIUS;dr++)
+    for(let dc=-FOG_RADIUS;dc<=FOG_RADIUS;dc++){
+      const nr=r+dr, nc=c+dc;
+      if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS) fogGrid[nr][nc]=false;
+    }
+}
+
+function preloadMemory(g){
+  let cnt=0;
+  MEM.knownObs.forEach(([r,c])=>{ if(g[r][c]===FREE){g[r][c]=OBS;cnt++;} });
+  return cnt;
+}
+
+// ═══════════════════════════════════════════════════════════
+// A* PATHFINDER (danger-aware)
+// ═══════════════════════════════════════════════════════════
+function walkable(g,r,c){ return r>=0&&r<ROWS&&c>=0&&c<COLS&&g[r][c]!==OBS&&g[r][c]!==NOFLY; }
+
+function astar(g, sr,sc, er,ec){
+  if(!walkable(g,er,ec)) return [[sr,sc]];
+  const H=(r,c)=>Math.abs(r-er)+Math.abs(c-ec);
+  const open=[[H(sr,sc),sr,sc]];
+  const gScore={}; gScore[`${sr},${sc}`]=0;
+  const from={};
+  while(open.length){
+    open.sort((a,b)=>a[0]-b[0]);
+    const [,r,c]=open.shift();
+    if(r===er&&c===ec){
+      const path=[]; let cr=er,cc=ec;
+      while(from[`${cr},${cc}`]){[cr,cc]=from[`${cr},${cc}`];path.unshift([cr,cc]);}
+      path.push([er,ec]);
+      return path.length?path:[[sr,sc]];
+    }
+    for(const [dr,dc] of DIRS){
+      const nr=r+dr,nc=c+dc;
+      if(!walkable(g,nr,nc)) continue;
+      const dangerCost=MEM.getDanger(nr,nc)*0.05;
+      const ng=(gScore[`${r},${c}`]||0)+1+dangerCost;
+      if(gScore[`${nr},${nc}`]===undefined||ng<gScore[`${nr},${nc}`]){
+        gScore[`${nr},${nc}`]=ng;
+        from[`${nr},${nc}`]=[r,c];
+        open.push([ng+H(nr,nc),nr,nc]);
+      }
+    }
+  }
+  return [[sr,sc]];
+}
+
+// ═══════════════════════════════════════════════════════════
+// SECTOR PATH BUILDER
+// KEY FIX: Only includes FREE/START cells (not VISITED) so drone
+// never backtracks to already-covered ground after a replan.
+// startR,startC = drone's CURRENT position (not 0,0).
+// ═══════════════════════════════════════════════════════════
+function buildSectorPath(g, droneIdx, totalDrones, startR, startC){
+  const secW=Math.ceil(COLS/totalDrones);
+  const c0=droneIdx*secW, c1=Math.min(c0+secW,COLS);
+  // Only collect UNCOVERED cells (FREE or START) in boustrophedon order
+  // VISITED cells are deliberately excluded — drone won't re-cover them
+  const waypoints=[];
+  for(let r=0;r<ROWS;r++){
+    const even=(r%2===0);
+    for(let ci=0;ci<(c1-c0);ci++){
+      const c=even?(c0+ci):(c1-1-ci);
+      if(g[r][c]===FREE || g[r][c]===START) waypoints.push([r,c]);
+    }
+  }
+  if(waypoints.length===0) return [[startR,startC]]; // sector done
+  // Build A*-connected path starting from current position
+  const fullPath=[];
+  let cur=[startR,startC];
+  for(const wp of waypoints){
+    if(wp[0]===cur[0]&&wp[1]===cur[1]){ fullPath.push(wp); continue; }
+    const seg=astar(g,cur[0],cur[1],wp[0],wp[1]);
+    seg.forEach(p=>{
+      if(!fullPath.length||(p[0]!==fullPath[fullPath.length-1][0]||p[1]!==fullPath[fullPath.length-1][1]))
+        fullPath.push(p);
+    });
+    cur=wp;
+  }
+  return fullPath.length?fullPath:[[startR,startC]];
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRONE STATE
+// ═══════════════════════════════════════════════════════════
+let drones=[], nDrones=2, msnNum=1, totalReplan=0;
+let running=false, paused=false, simTimer=null;
+const getEps=()=>Math.max(EPS_MIN, EPS0-EPS_DECAY*(msnNum-1));
+
+// Status: READY → ACTIVE → RTB → RECHARGING → ACTIVE ... → RETURNING → DONE
+function makeDrone(idx){
+  // All drones start from home base [0,0]
+  const path=buildSectorPath(liveGrid, idx, nDrones, 0, 0);
+  return {
+    idx, color:DRONE_COLORS[idx], name:DRONE_NAMES[idx],
+    path, pathIdx:0,
+    pos:[0,0],
+    batt:MAX_BATT,
+    trail:[],
+    status:'READY',
+    replanCount:0,
+    cellsVisited:0,
+    speedKmh:0,       // numeric speed display
+    // RTB (low battery → go home to recharge)
+    rtbPath:null, rtbIdx:0,
+    rechargeTick:0,
+    // HOME RETURN (sector done → return home)
+    homePath:null, homeIdx:0,
+    // 3D animation
+    rotAngle:Math.random()*Math.PI*2,
+    bobPhase:Math.random()*Math.PI*2,
+  };
+}
+
+// ─── RL CHOOSE ACTION ──────────────────────────
+function chooseAction(r,c){
+  if(Math.random()<getEps()){
+    // Weighted random avoiding danger
+    const valid=[];
+    for(let i=0;i<4;i++){
+      const [dr,dc]=DIRS[i],nr=r+dr,nc=c+dc;
+      if(walkable(liveGrid,nr,nc)) valid.push({i,w:Math.max(0.02,1-MEM.getDanger(nr,nc)/80)});
+    }
+    if(!valid.length) return Math.floor(Math.random()*4);
+    const tot=valid.reduce((s,x)=>s+x.w,0); let rr=Math.random()*tot;
+    for(const x of valid){rr-=x.w;if(rr<=0)return x.i;}
+    return valid[valid.length-1].i;
+  }
+  let best=null, bestScore=-Infinity;
+  for(let i=0;i<4;i++){
+    const [dr,dc]=DIRS[i],nr=r+dr,nc=c+dc;
+    if(walkable(liveGrid,nr,nc)){
+      const s=MEM.getQ(r,c,i)-MEM.getDanger(nr,nc)*0.12;
+      if(s>bestScore){bestScore=s;best=i;}
+    }
+  }
+  return best!==null?best:Math.floor(Math.random()*4);
+}
+
+function updateQ(r,c,a,reward,nr,nc){
+  const old=MEM.getQ(r,c,a);
+  const bestNext=Math.max(...DIRS.map((_,i)=>MEM.getQ(nr,nc,i)));
+  MEM.setQ(r,c,a, old+ALPHA*(reward+GAMMA*bestNext-old));
+}
+
+// ═══════════════════════════════════════════════════════════
+// DYNAMIC OBSTACLE SCHEDULE (auto obstacles during mission)
+// Uses global tick counter so each fires exactly once
+// ═══════════════════════════════════════════════════════════
+let dynObsSchedule={};
+let globalTick=0;  // increments every gameTick, independent of any drone
+const DYN_POOL=[[3,10],[7,14],[15,8],[11,5],[4,16],[13,3],[10,10],[6,16]];
+
+// ═══════════════════════════════════════════════════════════
+// TICK: single drone step
+// Battery costs: ACTIVE=0.5/step, RTB=0.7/step, RETURNING=0.4/step
+// With MAX_BATT=1200: ~2400 ACTIVE steps before empty (grid=400 cells)
+// ═══════════════════════════════════════════════════════════
+function tickDrone(d){
+  // 3D animation always runs
+  d.rotAngle += 0.09;
+  d.bobPhase += 0.06;
+
+  if(d.status==='DONE') return;
+
+  // ── RECHARGING ──
+  if(d.status==='RECHARGING'){
+    d.rechargeTick--;
+    d.batt=Math.min(MAX_BATT, d.batt + MAX_BATT/RECHARGE_STEPS);
+    d.speedKmh=0;
+    if(d.rechargeTick<=0){
+      // Replan from [0,0] (current pos after RTB), only uncovered cells
+      d.path=buildSectorPath(liveGrid, d.idx, nDrones, d.pos[0], d.pos[1]);
+      d.pathIdx=0;
+      d.status='ACTIVE';
+      log(`🔋 ${d.name} recharged → resuming, ${d.path.length} cells remain`, 'ok');
+    }
+    return;
+  }
+
+  // ── RETURNING HOME (sector complete → A* shortest path back) ──
+  if(d.status==='RETURNING'){
+    d.speedKmh=calcSpeed();
+    if(!d.homePath||d.homeIdx>=d.homePath.length){
+      d.status='DONE'; d.speedKmh=0;
+      log(`🏠 ${d.name} returned to base`, 'ok');
+      return;
+    }
+    const np=d.homePath[d.homeIdx++];
+    d.pos=[...np]; d.batt-=0.4;
+    d.trail.push([...np]); if(d.trail.length>80) d.trail.shift();
+    revealFog(np[0],np[1]);
+    return;
+  }
+
+  // ── RTB (low battery → go to [0,0] to recharge) ──
+  if(d.status==='RTB'){
+    d.speedKmh=calcSpeed()*1.2; // RTB faster conceptually
+    if(!d.rtbPath||d.rtbIdx>=d.rtbPath.length){
+      d.status='RECHARGING'; d.rechargeTick=RECHARGE_STEPS; d.speedKmh=0;
+      log(`🔌 ${d.name} at base — RECHARGING`, 'w');
+      return;
+    }
+    const np=d.rtbPath[d.rtbIdx++];
+    d.pos=[...np]; d.batt-=0.7;
+    d.trail.push([...np]); if(d.trail.length>60) d.trail.shift();
+    revealFog(np[0],np[1]);
+    return;
+  }
+
+  // ── Battery critical → RTB ──
+  if(d.batt/MAX_BATT<RTB_THRESHOLD && d.status==='ACTIVE'){
+    d.status='RTB';
+    // A* from CURRENT position to home [0,0]
+    d.rtbPath=astar(liveGrid, d.pos[0],d.pos[1], 0,0);
+    d.rtbIdx=0;
+    log(`⚠ ${d.name} BATTERY ${(d.batt/MAX_BATT*100).toFixed(0)}% — RTB from [${d.pos}]`, 'w');
+    showHint(`${d.name} LOW BATTERY — RTB ENGAGED`, 'obs');
+    return;
+  }
+
+  // ── Sector path complete → return home ──
+  if(d.pathIdx>=d.path.length && d.status==='ACTIVE'){
+    d.status='RETURNING';
+    // A* shortest path from CURRENT pos back to [0,0]
+    d.homePath=astar(liveGrid, d.pos[0],d.pos[1], 0,0);
+    d.homeIdx=0; d.speedKmh=calcSpeed();
+    log(`✅ ${d.name} sector done → returning home (${d.homePath.length} steps)`, 'ok');
+    return;
+  }
+
+  if(d.pathIdx>=d.path.length) return;
+
+  // ── Move to next cell on sector path ──
+  const [r,c]=d.path[d.pathIdx];
+  revealFog(r,c);
+  d.trail.push([r,c]); if(d.trail.length>80) d.trail.shift();
+  d.speedKmh=calcSpeed();
+
+  // RL update
+  const act=chooseAction(r,c);
+  let reward=-0.5;
+  if(liveGrid[r][c]===FREE){ liveGrid[r][c]=VISITED; reward+=12; d.cellsVisited++; }
+  else reward-=3;
+  reward-=MEM.getDanger(r,c)*0.05;
+  const nxt=d.pathIdx+1<d.path.length?d.path[d.pathIdx+1]:[r,c];
+  updateQ(r,c,act,reward,nxt[0],nxt[1]);
+
+  d.batt-=0.5; d.pos=[r,c]; d.pathIdx++;
+}
+
+// Speed in km/h based on slider (cell = ~200m, tick interval = ~80ms at speed 5)
+function calcSpeed(){
+  const spd=+document.getElementById('spdSlider').value;
+  const msPerTick=Math.max(10,190-spd*18);
+  const cellSize=(Z.rad*2/ROWS)*1000; // metres per cell
+  return Math.round((cellSize/msPerTick)*3600/1000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// 3D DRONE RENDERING (canvas-based 3D perspective)
+// ═══════════════════════════════════════════════════════════
+let CELL=24;
+const gc=document.getElementById('gc');
+const gx=gc.getContext('2d');
+
+function setupCanvas(){
+  const cw=window.innerWidth-410, ch=window.innerHeight-90;
+  CELL=Math.max(9, Math.floor(Math.min(cw/COLS, ch/ROWS)));
+  gc.width=COLS*CELL; gc.height=ROWS*CELL;
+}
+
+function drawDrone3D(px,py,color,size,rotAngle,bobPhase,status){
+  gx.save();
+  // Bob up/down (3D float effect)
+  const bob=Math.sin(bobPhase)*size*0.08;
+  gx.translate(px, py+bob);
+
+  const dc = status==='RTB'?'#ff8c00' : status==='RECHARGING'?'#00d4ff' : status==='RETURNING'?'#a855f7' : color;
+  const bodyR=Math.max(4.5, size*0.40);
+  const armLen=bodyR*1.05;
+  const rotorR=Math.max(2.2, bodyR*0.38);
+
+  // === SHADOW (ground projection) ===
+  gx.save();
+  gx.translate(size*0.06, bodyR*0.65);
+  gx.beginPath();
+  gx.ellipse(0,0, bodyR*1.15, bodyR*0.28, 0,0,Math.PI*2);
+  gx.fillStyle='rgba(0,0,0,0.28)';
+  gx.fill();
+  gx.restore();
+
+  // === GLOW RINGS ===
+  [3.0,2.2,1.5].forEach((s,i)=>{
+    gx.beginPath(); gx.arc(0,0,bodyR*s,0,Math.PI*2);
+    gx.strokeStyle=dc+['0e','1a','2e'][i]; gx.lineWidth=i===0?3:i===1?2:1; gx.stroke();
+  });
+
+  // === 4 ARMS (rotate with animation) ===
+  for(let i=0;i<4;i++){
+    const armAngle=i*(Math.PI/2)+rotAngle;
+    const ax=Math.cos(armAngle)*armLen, ay=Math.sin(armAngle)*armLen;
+    // 3D perspective: arms going away shrink slightly
+    const perspScale=1-Math.abs(Math.sin(armAngle))*0.12;
+    gx.save();
+    gx.scale(1,perspScale);
+    // Arm tube (gradient)
+    const armGrad=gx.createLinearGradient(0,0,ax,ay);
+    armGrad.addColorStop(0,dc+'80'); armGrad.addColorStop(1,dc+'cc');
+    gx.strokeStyle=armGrad; gx.lineWidth=Math.max(1.5,size*0.1);
+    gx.lineCap='round';
+    gx.beginPath(); gx.moveTo(0,0); gx.lineTo(ax,ay); gx.stroke();
+    // Motor housing (sphere-like)
+    gx.beginPath(); gx.arc(ax,ay,Math.max(1.5,bodyR*0.22),0,Math.PI*2);
+    const mGrad=gx.createRadialGradient(ax-1,ay-1,0.5,ax,ay,bodyR*0.22);
+    mGrad.addColorStop(0,'#fff'); mGrad.addColorStop(0.4,dc); mGrad.addColorStop(1,dc+'88');
+    gx.fillStyle=mGrad; gx.fill();
+    // Rotor disk (3D ellipse — wider than tall for perspective)
+    gx.save(); gx.translate(ax,ay);
+    gx.beginPath(); gx.ellipse(0,0, rotorR, rotorR*0.38, armAngle,0,Math.PI*2);
+    gx.fillStyle=dc+'22'; gx.fill();
+    gx.strokeStyle=dc+'55'; gx.lineWidth=0.8; gx.stroke();
+    // Spinning rotor blades
+    for(let b=0;b<3;b++){
+      const ba=b*(Math.PI*2/3)+rotAngle*4;
+      gx.beginPath();
+      gx.moveTo(0,0);
+      gx.lineTo(Math.cos(ba)*rotorR, Math.sin(ba)*rotorR*0.38);
+      gx.strokeStyle=dc+'70'; gx.lineWidth=1.2; gx.stroke();
+    }
+    gx.restore();
+    gx.restore();
+  }
+
+  // === BODY (hemisphere — 3D radial gradient) ===
+  const bodyGrad=gx.createRadialGradient(-bodyR*.28,-bodyR*.28,0, 0,0,bodyR);
+  bodyGrad.addColorStop(0,'#ffffff');
+  bodyGrad.addColorStop(0.25,dc);
+  bodyGrad.addColorStop(0.7,dc+'cc');
+  bodyGrad.addColorStop(1,dc+'55');
+  gx.beginPath(); gx.arc(0,0,bodyR,0,Math.PI*2);
+  gx.shadowColor=dc; gx.shadowBlur=size*0.5; gx.fillStyle=bodyGrad; gx.fill();
+  gx.shadowBlur=0;
+
+  // Body detail cross
+  gx.strokeStyle='rgba(0,0,0,0.5)'; gx.lineWidth=1.2;
+  gx.beginPath(); gx.moveTo(-bodyR*.6,0); gx.lineTo(bodyR*.6,0); gx.stroke();
+  gx.beginPath(); gx.moveTo(0,-bodyR*.6); gx.lineTo(0,bodyR*.6); gx.stroke();
+
+  // Camera (bottom sphere)
+  gx.beginPath(); gx.arc(0,bodyR*.35,bodyR*0.22,0,Math.PI*2);
+  const camGrad=gx.createRadialGradient(-bodyR*.06,bodyR*.3,0.5,0,bodyR*.35,bodyR*0.22);
+  camGrad.addColorStop(0,'#80e0ff'); camGrad.addColorStop(1,'#004488');
+  gx.fillStyle=camGrad; gx.fill();
+  gx.strokeStyle=dc+'60'; gx.lineWidth=0.8; gx.stroke();
+
+  // === LANDING GEAR (3D legs) ===
+  [[-bodyR*.42,bodyR*.15],[bodyR*.42,bodyR*.15]].forEach(([lx,ly])=>{
+    gx.strokeStyle=dc+'55'; gx.lineWidth=1;
+    gx.beginPath(); gx.moveTo(lx,ly); gx.lineTo(lx*0.8,bodyR*0.75); gx.stroke();
+  });
+  gx.beginPath(); gx.moveTo(-bodyR*.42,bodyR*0.75); gx.lineTo(bodyR*.42,bodyR*0.75);
+  gx.strokeStyle=dc+'44'; gx.lineWidth=1; gx.stroke();
+
+  gx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAIN DRAW
+// ═══════════════════════════════════════════════════════════
+function drawMap(){
+  gx.fillStyle='#04060f'; gx.fillRect(0,0,gc.width,gc.height);
+
+  // Cells
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const x=c*CELL, y=r*CELL;
+    if(fogGrid[r][c]){
+      gx.fillStyle='#0b1225'; gx.fillRect(x,y,CELL,CELL);
+      gx.strokeStyle='rgba(255,255,255,.03)'; gx.lineWidth=.4; gx.strokeRect(x,y,CELL,CELL);
+      continue;
+    }
+    const dg=MEM.getDanger(r,c);
+    if(dg>0){
+      gx.fillStyle=`rgba(255,68,102,${Math.min(.28,dg/90)})`; gx.fillRect(x,y,CELL,CELL);
+    }
+    const v=liveGrid[r][c];
+    if(v===OBS){
+      gx.fillStyle='rgba(255,68,102,.22)'; gx.fillRect(x+1,y+1,CELL-2,CELL-2);
+      gx.strokeStyle='#ff4466'; gx.lineWidth=1; gx.strokeRect(x+1,y+1,CELL-2,CELL-2);
+      gx.strokeStyle='rgba(255,68,102,.4)'; gx.lineWidth=.8;
+      gx.beginPath(); gx.moveTo(x+3,y+3); gx.lineTo(x+CELL-3,y+CELL-3); gx.stroke();
+      gx.beginPath(); gx.moveTo(x+CELL-3,y+3); gx.lineTo(x+3,y+CELL-3); gx.stroke();
+    } else if(v===NOFLY){
+      gx.fillStyle='rgba(255,140,0,.07)'; gx.fillRect(x,y,CELL,CELL);
+      gx.save(); gx.strokeStyle='rgba(255,140,0,.18)'; gx.lineWidth=.5;
+      for(let i=-CELL;i<CELL*2;i+=5){ gx.beginPath(); gx.moveTo(x+i,y); gx.lineTo(x+i+CELL,y+CELL); gx.stroke(); }
+      gx.restore();
+      gx.strokeStyle='rgba(255,140,0,.5)'; gx.lineWidth=.5; gx.strokeRect(x,y,CELL,CELL);
+    } else if(v===VISITED){
+      gx.fillStyle='#001508'; gx.fillRect(x+1,y+1,CELL-2,CELL-2);
+    }
+  }
+
+  // Grid lines
+  gx.strokeStyle='rgba(26,37,64,.5)'; gx.lineWidth=.4;
+  for(let r=0;r<=ROWS;r++){gx.beginPath();gx.moveTo(0,r*CELL);gx.lineTo(COLS*CELL,r*CELL);gx.stroke();}
+  for(let c=0;c<=COLS;c++){gx.beginPath();gx.moveTo(c*CELL,0);gx.lineTo(c*CELL,ROWS*CELL);gx.stroke();}
+
+  // Sector dividers
+  for(let i=1;i<nDrones;i++){
+    const x=Math.floor(i*COLS/nDrones)*CELL;
+    gx.strokeStyle='rgba(0,212,255,.08)'; gx.lineWidth=1; gx.setLineDash([3,3]);
+    gx.beginPath(); gx.moveTo(x,0); gx.lineTo(x,gc.height); gx.stroke();
+    gx.setLineDash([]);
+  }
+
+  // RL known obstacles (memory overlay)
+  MEM.knownObs.forEach(([r,c])=>{
+    if(fogGrid[r][c]) return;
+    const x=c*CELL,y=r*CELL;
+    gx.fillStyle='rgba(168,85,247,.14)'; gx.fillRect(x+1,y+1,CELL-2,CELL-2);
+    gx.strokeStyle='rgba(168,85,247,.55)'; gx.lineWidth=.8; gx.strokeRect(x+1,y+1,CELL-2,CELL-2);
+  });
+
+  // Home base marker
+  if(!fogGrid[0][0]){
+    gx.fillStyle='rgba(0,245,160,.12)'; gx.fillRect(0,0,CELL,CELL);
+    gx.strokeStyle='rgba(0,245,160,.55)'; gx.lineWidth=1.5; gx.strokeRect(0,0,CELL,CELL);
+    gx.fillStyle='#00f5a0'; gx.font=`bold ${Math.max(7,CELL*.4)}px Share Tech Mono`;
+    gx.textAlign='center'; gx.fillText('H',CELL/2,CELL*.72); gx.textAlign='left';
+  }
+
+  // Trails
+  drones.forEach(d=>{
+    if(d.trail.length<2) return;
+    const tr=d.trail;
+    const grad=gx.createLinearGradient(
+      tr[0][1]*CELL+CELL/2, tr[0][0]*CELL+CELL/2,
+      tr[tr.length-1][1]*CELL+CELL/2, tr[tr.length-1][0]*CELL+CELL/2
+    );
+    grad.addColorStop(0,'transparent'); grad.addColorStop(1,d.color+'55');
+    gx.beginPath();
+    gx.moveTo(tr[0][1]*CELL+CELL/2, tr[0][0]*CELL+CELL/2);
+    tr.forEach(p=>gx.lineTo(p[1]*CELL+CELL/2, p[0]*CELL+CELL/2));
+    gx.strokeStyle=grad; gx.lineWidth=1.4; gx.stroke();
+  });
+
+  // Return/RTB path preview (dotted line ahead)
+  drones.forEach(d=>{
+    let previewPath=null;
+    if(d.status==='RTB' && d.rtbPath && d.rtbIdx<d.rtbPath.length)
+      previewPath=d.rtbPath.slice(d.rtbIdx);
+    else if(d.status==='RETURNING' && d.homePath && d.homeIdx<d.homePath.length)
+      previewPath=d.homePath.slice(d.homeIdx);
+    if(previewPath&&previewPath.length>1){
+      gx.setLineDash([2,4]); gx.strokeStyle=d.color+'30'; gx.lineWidth=1;
+      gx.beginPath(); gx.moveTo(previewPath[0][1]*CELL+CELL/2,previewPath[0][0]*CELL+CELL/2);
+      previewPath.forEach(p=>gx.lineTo(p[1]*CELL+CELL/2,p[0]*CELL+CELL/2));
+      gx.stroke(); gx.setLineDash([]);
+    }
+  });
+
+  // 3D Drones
+  drones.forEach(d=>{
+    if(d.status==='DONE') return;
+    const [dr,dc]=d.pos;
+    const px=dc*CELL+CELL/2, py=dr*CELL+CELL/2;
+    drawDrone3D(px,py,d.color,CELL,d.rotAngle,d.bobPhase,d.status);
+    // Label
+    const lc=d.status==='RTB'?'#ff8c00':d.status==='RECHARGING'?'#00d4ff':d.status==='RETURNING'?'#a855f7':d.color;
+    gx.fillStyle=lc; gx.font=`bold ${Math.max(6,CELL*.26)}px Orbitron,Share Tech Mono`;
+    gx.textAlign='center';
+    gx.fillText(d.name.split('-')[1], px, py-CELL*.52);
+    if(d.status==='RTB'||d.status==='RETURNING'){
+      gx.font=`${Math.max(5,CELL*.2)}px Share Tech Mono`;
+      gx.fillText(d.status==='RTB'?'RTB↩':'HOME↩', px, py+CELL*.6);
+    }
+  });
+  gx.textAlign='left';
+}
+
+// ═══════════════════════════════════════════════════════════
+// HUD UPDATE
+// ═══════════════════════════════════════════════════════════
+function updateHUD(){
+  const act=drones.filter(d=>['ACTIVE','RTB','RETURNING','RECHARGING'].includes(d.status)).length;
+  document.getElementById('vAct').textContent=act;
+  let vis=0,tot=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(liveGrid[r][c]!==OBS&&liveGrid[r][c]!==NOFLY)tot++;
+    if(liveGrid[r][c]===VISITED||liveGrid[r][c]===START)vis++;
+  }
+  document.getElementById('vCov').textContent=tot>0?(vis/tot*100).toFixed(1)+'%':'0%';
+  const fogCleared=fogGrid.flat().filter(f=>!f).length;
+  document.getElementById('vFog').textContent=(fogCleared/(ROWS*COLS)*100).toFixed(1)+'%';
+  document.getElementById('vRep').textContent=totalReplan;
+  document.getElementById('vObs').textContent=MEM.knownObs.length;
+  document.getElementById('vKO').textContent=MEM.knownObs.length;
+  document.getElementById('vDZ').textContent=MEM.dangerCells();
+  document.getElementById('vQS').textContent=MEM.qSize();
+  document.getElementById('vEps').textContent=getEps().toFixed(2);
+  document.getElementById('msnTag').textContent=`MISSION ${msnNum}`;
+
+  // Drone cards
+  drones.forEach(d=>{
+    const el=document.getElementById('dc'+d.idx); if(!el)return;
+    const pct=Math.max(0,d.batt/MAX_BATT*100);
+    el.querySelector('.badge').textContent=d.status;
+    el.querySelector('.badge').style.borderColor=d.color;
+    el.querySelector('.badge').style.color=d.color;
+    el.querySelector('.battval').textContent=pct.toFixed(0)+'%';
+    const bf=el.querySelector('.battfill');
+    bf.style.width=pct+'%';
+    const bc=pct<12?'#ff4466':pct<40?'#ff8c00':d.color;
+    bf.style.background=bc; bf.style.boxShadow=`0 0 5px ${bc}`;
+    // Speed display
+    const sv=el.querySelector('.speedval');
+    if(sv) sv.textContent=d.speedKmh>0?`${d.speedKmh} km/h`:'0 km/h';
+    el.className='dcard'+(
+      d.status==='RTB'?' rtb':
+      d.status==='RETURNING'?' returning':
+      d.status==='RECHARGING'?' recharging':
+      d.status==='DONE'?' done':''
+    );
+    if(d.status!=='DONE') el.style.borderColor=d.color+'40';
+    el.querySelector('.replct').textContent=d.replanCount;
+  });
+
+  // Coord bar
+  const lead=drones.find(d=>d.status==='ACTIVE')||drones[0];
+  if(lead){
+    const {lat,lng}=Z.cellLatLng(lead.pos[0],lead.pos[1]);
+    document.getElementById('cbar').textContent=
+      `[ ${lead.name} | ${fmtCoord(lat,true)} | ${fmtCoord(lng,false)} | ALT:${Z.alt}m | ACTIVE:${act}/${nDrones} ]`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// HEATMAP — always shows ALL RL memory (danger + known obstacles)
+// regardless of fog. Memory persists across missions.
+// Known obstacles shown even in fog-covered areas.
+// ═══════════════════════════════════════════════════════════
+function drawHeatmap(){
+  const hc=document.getElementById('heatCanvas');
+  const hx=hc.getContext('2d');
+  const cw=hc.width/COLS, ch=hc.height/ROWS;
+  // Max danger across ALL memory cells (not just revealed)
+  let maxD=1;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) maxD=Math.max(maxD,MEM.getDanger(r,c));
+  hx.fillStyle='#04060f'; hx.fillRect(0,0,hc.width,hc.height);
+  // Fast lookup: known obstacle positions from RL memory
+  const obsSet=new Set(MEM.knownObs.map(([r,c])=>`${r},${c}`));
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const x=c*cw, y=r*ch;
+    const inFog=fogGrid[r][c];
+    const dg=MEM.getDanger(r,c);
+    const isKnownObs=obsSet.has(`${r},${c}`);
+    const isGridObs=liveGrid[r]&&liveGrid[r][c]===OBS;
+    if(isKnownObs||isGridObs){
+      // Known obstacle — always visible, red with X mark
+      hx.fillStyle=inFog?'rgba(255,68,102,0.5)':'rgba(255,68,102,0.9)';
+      hx.fillRect(x,y,cw,ch);
+      hx.strokeStyle=inFog?'rgba(255,68,102,0.35)':'rgba(255,100,120,0.8)';
+      hx.lineWidth=0.7;
+      hx.beginPath(); hx.moveTo(x+1,y+1); hx.lineTo(x+cw-1,y+ch-1); hx.stroke();
+      hx.beginPath(); hx.moveTo(x+cw-1,y+1); hx.lineTo(x+1,y+ch-1); hx.stroke();
+    } else if(dg>0){
+      // Danger zone — show even in fog (RL memory is global knowledge)
+      const ratio=dg/maxD;
+      const alpha=inFog?ratio*0.42:ratio*0.82;
+      hx.fillStyle=`rgba(255,${Math.floor(68*(1-ratio))},${Math.floor(102*(1-ratio))},${alpha})`;
+      hx.fillRect(x,y,cw,ch);
+    } else if(inFog){
+      hx.fillStyle='#080e1e'; hx.fillRect(x,y,cw,ch);
+    } else {
+      hx.fillStyle='#001508'; hx.fillRect(x,y,cw,ch);
+    }
+  }
+  // Drone position dots
+  drones.forEach(d=>{
+    if(d.status==='DONE') return;
+    const [dr,dc]=d.pos;
+    hx.beginPath(); hx.arc(dc*cw+cw/2,dr*ch+ch/2,Math.max(1.5,cw*.38),0,Math.PI*2);
+    hx.fillStyle=d.color+'cc'; hx.fill();
+  });
+  // Grid lines
+  hx.strokeStyle='rgba(26,37,64,.18)'; hx.lineWidth=.25;
+  for(let r=0;r<=ROWS;r++){hx.beginPath();hx.moveTo(0,r*ch);hx.lineTo(hc.width,r*ch);hx.stroke();}
+  for(let c=0;c<=COLS;c++){hx.beginPath();hx.moveTo(c*cw,0);hx.lineTo(c*cw,hc.height);hx.stroke();}
+  // Status line under heatmap
+  const sub=document.getElementById('heatSub');
+  if(sub){
+    const o=MEM.knownObs.length, d2=MEM.dangerCells();
+    sub.textContent=o>0||d2>0?`${o} OBS · ${d2} DANGER ZONES IN MEMORY`:'NO THREAT DATA YET';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MISSION MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+function initMission(){
+  baseGrid=buildBaseGrid();
+  liveGrid=baseGrid.map(r=>[...r]);
+  fogGrid=buildFogGrid();
+  const memLoaded=preloadMemory(liveGrid);
+  if(memLoaded>0){
+    log(`🧠 Memory: ${memLoaded} obstacles pre-applied from past missions`, 'mem');
+    showHint(`MEMORY: ${memLoaded} OBS PRE-AVOIDED`, 'mem');
+  }
+  // Schedule auto obstacles using global tick (fires exactly once each)
+  const pool=DYN_POOL.filter(([r,c])=>!MEM.knownObs.find(o=>o[0]===r&&o[1]===c));
+  dynObsSchedule={};
+  pool.slice(0,2).forEach((obs,i)=>{ dynObsSchedule[120+i*160]=obs; });
+  globalTick=0;
+
+  drones=[]; for(let i=0;i<nDrones;i++) drones.push(makeDrone(i));
+  totalReplan=0; running=false; paused=false;
+
+  renderDroneCards(); drawMap(); drawHeatmap(); updateHUD();
+  document.getElementById('topTag').textContent=
+    `GARUDA ${nDrones}-DRONE | BOUSTROPHEDON+A* | 3D | FOG+RTB+RETURN-HOME | MISSION ${msnNum}`;
+  document.getElementById('launchBtn').disabled=false;
+  document.getElementById('pauseBtn').disabled=true;
+  document.getElementById('nextBtn').disabled=true;
+  document.getElementById('pauseTxt').textContent='⏸ PAUSE';
+}
+
+function renderDroneCards(){
+  document.getElementById('droneCards').innerHTML=
+    `<div class="sec-title">◈ DRONE STATUS</div>`+
+    drones.map(d=>`
+      <div class="dcard" id="dc${d.idx}" style="border-color:${d.color}40">
+        <div class="dcard-hd">
+          <span class="dname" style="color:${d.color}">${d.name}</span>
+          <span class="badge" style="border-color:${d.color};color:${d.color}">READY</span>
+        </div>
+        <div class="kv"><span>BATTERY</span><span class="val battval" style="color:${d.color}">100%</span></div>
+        <div class="battbar"><div class="battfill" style="width:100%;background:${d.color};box-shadow:0 0 6px ${d.color}"></div></div>
+        <div class="kv"><span>SPEED</span><span class="val speedval" style="color:${d.color}">0 km/h</span></div>
+        <div class="kv"><span>REPLANNINGS</span><span class="val replct" style="color:${d.color}">0</span></div>
+      </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════════════════════
+function doLaunch(){
+  document.getElementById('launchBtn').disabled=true;
+  document.getElementById('pauseBtn').disabled=false;
+  drones.forEach(d=>d.status='ACTIVE');
+  running=true;
+  log(`🚀 GARUDA ${nDrones}-drone swarm launched! ε=${getEps().toFixed(2)}`, 'ok');
+  log('Fog of War: ON | RTB at 12% | Return-Home via A* after sector', 'inf');
+  startTimer();
+}
+
+function startTimer(){
+  if(simTimer) clearInterval(simTimer);
+  const spd=+document.getElementById('spdSlider').value;
+  simTimer=setInterval(gameTick, Math.max(10,190-spd*18));
+}
+
+function gameTick(){
+  if(paused||!running) return;
+  globalTick++;
+
+  // ── Fire auto-obstacles based on global tick (fires exactly once) ──
+  if(dynObsSchedule[globalTick]){
+    const [or,oc]=dynObsSchedule[globalTick];
+    delete dynObsSchedule[globalTick]; // prevent re-fire
+    if(liveGrid[or][oc]===FREE){
+      liveGrid[or][oc]=OBS; baseGrid[or][oc]=OBS;
+      MEM.learnObstacle(or,oc);
+      log(`⊕ Auto-obstacle at [${or},${oc}] — checking drones`, 'al');
+      showHint(`OBSTACLE DETECTED [${or},${oc}]`, 'al');
+      let n=0;
+      drones.forEach(od=>{
+        if(od.status!=='ACTIVE') return;
+        const remaining=od.path.slice(od.pathIdx);
+        if(remaining.some(p=>p[0]===or&&p[1]===oc)){
+          // Replan from CURRENT position, only uncovered cells remain
+          od.path=buildSectorPath(liveGrid,od.idx,nDrones,od.pos[0],od.pos[1]);
+          od.pathIdx=0; od.replanCount++; totalReplan++; n++;
+          log(`↺ ${od.name} replanned from [${od.pos}]`,'al');
+        }
+      });
+      if(n===0) log(`⊕ Obs [${or},${oc}] — no drones affected`,'inf');
+      drawHeatmap();
+    }
+  }
+
+  drones.forEach(d=>tickDrone(d));
+  drawMap(); updateHUD();
+  if(drones.every(d=>d.status==='DONE'||d.batt<=0)) missionComplete();
+}
+
+function togglePause(){
+  paused=!paused;
+  document.getElementById('pauseTxt').textContent=paused?'▶ RESUME':'⏸ PAUSE';
+  log(paused?'⏸ Mission paused':'▶ Mission resumed', paused?'w':'inf');
+}
+
+function missionComplete(){
+  clearInterval(simTimer); running=false;
+  let vis=0,tot=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(liveGrid[r][c]!==OBS&&liveGrid[r][c]!==NOFLY)tot++;
+    if(liveGrid[r][c]===VISITED||liveGrid[r][c]===START)vis++;
+  }
+  const cov=tot>0?(vis/tot*100):0;
+  MEM.msnHistory.push({m:msnNum,cov,replan:totalReplan,obs:MEM.knownObs.length,nd:nDrones});
+  updateMsnHistory();
+  document.getElementById('doneGrid').innerHTML=`
+    <div>COVERAGE <b>${cov.toFixed(1)}%</b></div>
+    <div>DRONES <b>${nDrones}</b></div>
+    <div>REPLANNINGS <b>${totalReplan}</b></div>
+    <div>OBSTACLES <b>${MEM.knownObs.length}</b></div>
+    <div>Q-STATES <b>${MEM.qSize()}</b></div>
+    <div>EPSILON <b>${getEps().toFixed(2)}</b></div>`;
+  const prev=MEM.msnHistory[MEM.msnHistory.length-2];
+  document.getElementById('doneNote').textContent=prev
+    ?(totalReplan<prev.replan?`✅ ${prev.replan-totalReplan} FEWER REPLANNINGS — GARUDA IS LEARNING!`
+      :totalReplan===prev.replan?'✅ STABLE PERFORMANCE — MEMORY HOLDING'
+      :`⚠ ${totalReplan-prev.replan} MORE REPLANNINGS — MEMORY GROWING`)
+    :'MISSION 1 BASELINE — START MISSION 2 TO SEE GARUDA LEARN';
+  document.getElementById('doneOv').classList.add('show');
+  document.getElementById('nextBtn').disabled=false;
+  log(`✅ Mission ${msnNum} complete — Coverage:${cov.toFixed(1)}% Replan:${totalReplan}`, 'ok');
+}
+
+function nextMission(){
+  // Close mission complete overlay
+  document.getElementById('doneOv').classList.remove('show');
+  msnNum++;
+  // Open coordinate modal so user selects new surveillance area
+  updPreview();
+  document.getElementById('coordModal').classList.add('open');
+  // Show next-mission banner with correct mission number
+  const mb=document.getElementById('coordNextBanner');
+  if(mb) mb.style.display='flex';
+  const mn=document.getElementById('coordMsnNum');
+  if(mn) mn.textContent=msnNum;
+  log(`══ MISSION ${msnNum} — SELECT SURVEILLANCE ZONE ══`,'mem');
+}
+
+function setN(n){
+  nDrones=n;
+  document.querySelectorAll('.cnt-btn').forEach((b,i)=>b.classList.toggle('on',i===n-1));
+  if(!running) initMission();
+}
+
+function fullReset(){
+  clearInterval(simTimer); MEM.reset(); msnNum=1; nDrones=2; userPaints=[];
+  obsMode=false; editMode=false;
+  document.querySelectorAll('.cnt-btn').forEach((b,i)=>b.classList.toggle('on',i===1));
+  document.getElementById('doneOv').classList.remove('show');
+  document.getElementById('edbar').style.display='none';
+  document.getElementById('editBtn').textContent='✏ EDIT MAP';
+  document.getElementById('editBtn').classList.remove('active');
+  document.getElementById('obsBtn').innerHTML='<span>🎯 PLACE OBSTACLE</span>';
+  document.getElementById('obsBtn').className='btn bo';
+  initMission(); updateMsnHistory();
+  log('↺ Full reset — all memory cleared','al');
+}
+
+function onSpeedChange(){
+  if(running&&!paused) startTimer();
+  // Update global speed display
+  const spd=calcSpeed();
+  const el=document.getElementById('spdDisplay');
+  if(el) el.textContent=`~${spd} km/h`;
+}
+
+function updateMsnHistory(){
+  const el=document.getElementById('mhist');
+  if(!MEM.msnHistory.length){el.innerHTML='<div style="font-size:8px;color:var(--tx)">No missions completed</div>';return;}
+  el.innerHTML=MEM.msnHistory.map(m=>`
+    <div class="mhrow">
+      <span style="min-width:42px">M${m.m}×${m.nd}</span>
+      <div class="mhtrack"><div class="mhfill" style="width:${m.cov}%;background:${m.replan===0?'var(--g)':m.replan<3?'var(--gd)':'var(--r)'}"></div></div>
+      <span style="min-width:30px;text-align:right">${m.cov.toFixed(0)}%</span>
+    </div>
+    <div style="font-size:7px;color:var(--tx);padding-left:42px;margin-bottom:3px">Rpl:${m.replan} Obs:${m.obs}</div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DYNAMIC OBSTACLE PLACEMENT (USER CLICK)
+// FIX: Smooth placement, no restart, replan from current pos
+// ═══════════════════════════════════════════════════════════
+let obsMode=false;
+
+function toggleObsMode(){
+  if(!running){ log('Launch mission first!','w'); return; }
+  obsMode=!obsMode;
+  const btn=document.getElementById('obsBtn');
+  if(obsMode){
+    btn.innerHTML='<span>✕ CANCEL PLACEMENT</span>'; btn.className='btn br';
+    gc.style.cursor='crosshair';
+    showHint('🎯 CLICK ANY REVEALED FREE CELL TO PLACE OBSTACLE','obs');
+  } else {
+    btn.innerHTML='<span>🎯 PLACE OBSTACLE</span>'; btn.className='btn bo';
+    gc.style.cursor='default'; clearHint();
+  }
+}
+
+function placeObstacle(r,c){
+  if(r<0||r>=ROWS||c<0||c>=COLS) return;
+  if(fogGrid[r][c]){ showHint('CELL IN FOG — NOT YET REVEALED','al'); return; }
+  if(r===0&&c===0){ showHint('CANNOT BLOCK HOME BASE','al'); return; }
+  if(liveGrid[r][c]===OBS||liveGrid[r][c]===NOFLY){ showHint(`[${r},${c}] ALREADY BLOCKED`,'w'); return; }
+
+  // Place obstacle in both grids
+  liveGrid[r][c]=OBS; baseGrid[r][c]=OBS;
+  MEM.learnObstacle(r,c);
+
+  // KEY FIX: Only replan drones whose REMAINING path crosses this obstacle.
+  // Rebuild from their CURRENT position — only uncovered cells will be in new path.
+  // pathIdx resets to 0 because new path starts from current position.
+  let replanned=0;
+  drones.forEach(d=>{
+    if(d.status!=='ACTIVE') return;
+    const remaining=d.path.slice(d.pathIdx);
+    if(remaining.some(p=>p[0]===r&&p[1]===c)){
+      d.path=buildSectorPath(liveGrid, d.idx, nDrones, d.pos[0], d.pos[1]);
+      d.pathIdx=0; // new path starts from d.pos so this is correct
+      d.replanCount++; totalReplan++; replanned++;
+      log(`↺ ${d.name} replanned from [${d.pos[0]},${d.pos[1]}] — ${d.path.length} steps left`, 'al');
+    }
+  });
+
+  const msg=replanned>0
+    ?`⊕ OBS [${r},${c}] → ${replanned} DRONE(S) REPLANNING FROM CURRENT POS`
+    :`⊕ OBS [${r},${c}] → NO ACTIVE DRONES AFFECTED`;
+  showHint(msg,'al'); drawHeatmap(); drawMap();
+  log(msg, replanned>0?'al':'inf');
+
+  // Exit obstacle mode
+  obsMode=false;
+  document.getElementById('obsBtn').innerHTML='<span>🎯 PLACE OBSTACLE</span>';
+  document.getElementById('obsBtn').className='btn bo';
+  gc.style.cursor='default';
+  setTimeout(clearHint, 2800);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAP EDITOR
+// ═══════════════════════════════════════════════════════════
+let editMode=false, currentTool='nfz', mouseDown=false;
+
+function toggleEdit(){
+  editMode=!editMode;
+  document.getElementById('edbar').style.display=editMode?'flex':'none';
+  document.getElementById('editBtn').textContent=editMode?'✕ CLOSE EDITOR':'✏ EDIT MAP';
+  document.getElementById('editBtn').classList.toggle('active',editMode);
+  gc.style.cursor=editMode?'crosshair':'default';
+}
+
+function setTool(t){
+  currentTool=t;
+  document.getElementById('tObs').classList.toggle('on',t==='obs');
+  document.getElementById('tNfz').classList.toggle('on',t==='nfz');
+  document.getElementById('tEra').classList.toggle('on',t==='era');
+}
+
+function cellFromEvent(e){
+  const rect=gc.getBoundingClientRect();
+  return [Math.floor((e.clientY-rect.top)/CELL), Math.floor((e.clientX-rect.left)/CELL)];
+}
+
+function applyPaint(r,c){
+  if(r<0||r>=ROWS||c<0||c>=COLS||running) return;
+  if(r===0&&c===0) return;
+  userPaints=userPaints.filter(p=>!(p[0]===r&&p[1]===c));
+  userPaints.push([r,c,currentTool]);
+  liveGrid[r][c]=baseGrid[r][c]=currentTool==='obs'?OBS:currentTool==='nfz'?NOFLY:FREE;
+  fogGrid[r][c]=false; drawMap();
+}
+
+function clearEdits(){ userPaints=[]; initMission(); log('Editor cleared','w'); }
+
+gc.addEventListener('mousedown',e=>{
+  if(obsMode&&running){ placeObstacle(...cellFromEvent(e)); return; }
+  if(!editMode||running) return;
+  mouseDown=true; applyPaint(...cellFromEvent(e));
+});
+gc.addEventListener('mousemove',e=>{ if(mouseDown&&editMode&&!running) applyPaint(...cellFromEvent(e)); });
+gc.addEventListener('mouseup',()=>mouseDown=false);
+gc.addEventListener('mouseleave',()=>mouseDown=false);
+
+// ═══════════════════════════════════════════════════════════
+// HINT SYSTEM
+// ═══════════════════════════════════════════════════════════
+let hintTimer=null;
+function showHint(msg,type='inf'){
+  const box=document.getElementById('hintBox');
+  box.innerHTML=`<div class="hint hint-${type}">${msg}</div>`;
+  if(hintTimer) clearTimeout(hintTimer);
+  if(type!=='obs') hintTimer=setTimeout(clearHint,3000);
+}
+function clearHint(){ document.getElementById('hintBox').innerHTML=''; }
+
+// ═══════════════════════════════════════════════════════════
+// EVENT LOG
+// ═══════════════════════════════════════════════════════════
+function log(msg,type=''){
+  const el=document.createElement('div');
+  el.className='ei'+(type?' '+type:'');
+  el.textContent=`[${new Date().toLocaleTimeString('en',{hour12:false})}] ${msg}`;
+  const lg=document.getElementById('elog');
+  lg.insertBefore(el,lg.firstChild);
+  while(lg.children.length>60) lg.removeChild(lg.lastChild);
+}
+
+// ═══════════════════════════════════════════════════════════
+// COORDINATE MODAL
+// ═══════════════════════════════════════════════════════════
+function openCoord(){ updPreview(); document.getElementById('coordModal').classList.add('open'); }
+function closeCoord(){
+  document.getElementById('coordModal').classList.remove('open');
+  const mb=document.getElementById('coordNextBanner');
+  if(mb) mb.style.display='none';
+}
+function setPreset(lat,lng){ document.getElementById('iLat').value=lat; document.getElementById('iLng').value=lng; updPreview(); }
+function updPreview(){
+  const lat=parseFloat(document.getElementById('iLat').value)||28.6139;
+  const lng=parseFloat(document.getElementById('iLng').value)||77.2090;
+  const rad=parseFloat(document.getElementById('iRad').value)||2;
+  const alt=parseFloat(document.getElementById('iAlt').value)||120;
+  document.getElementById('pLL').textContent=`${fmtCoord(lat,true)}, ${fmtCoord(lng,false)}`;
+  document.getElementById('pArea').textContent=`${(rad*2).toFixed(1)} × ${(rad*2).toFixed(1)} km`;
+  document.getElementById('pCell').textContent=`~${Math.round(rad*2/ROWS*1000)} × ${Math.round(rad*2/COLS*1000)} m`;
+  document.getElementById('pAlt').textContent=`${alt} m AGL`;
+}
+function resetMemoryAndApply(){
+  MEM.reset();
+  log('RL memory cleared — fresh start','al');
+  applyCoord();
+}
+
+function applyCoord(){
+  Z.lat=parseFloat(document.getElementById('iLat').value)||28.6139;
+  Z.lng=parseFloat(document.getElementById('iLng').value)||77.2090;
+  Z.rad=parseFloat(document.getElementById('iRad').value)||2;
+  Z.alt=parseFloat(document.getElementById('iAlt').value)||120;
+  // Hide next-mission banner
+  const mb=document.getElementById('coordNextBanner');
+  if(mb) mb.style.display='none';
+  closeCoord();
+  if(running){clearInterval(simTimer);running=false;}
+  // On next mission: preserve MEM (keeps obstacle memory + Q-learning)
+  // On first launch / manual open: also preserve memory (user may just change zone)
+  userPaints=[];
+  document.getElementById('doneOv').classList.remove('show');
+  initMission(); updateMsnHistory();
+  log(`Zone: ${fmtCoord(Z.lat,true)} ${fmtCoord(Z.lng,false)} | ${(Z.rad*2).toFixed(1)}km | ~${Math.round(Z.rad*2/ROWS*1000)}m/cell | MSN ${msnNum}`,'mem');
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+function updateClock(){ document.getElementById('clk').textContent=new Date().toLocaleTimeString('en',{hour12:false}); }
+updateClock(); setInterval(updateClock,1000);
+window.addEventListener('resize',()=>{ setupCanvas(); drawMap(); });
+setupCanvas(); initMission(); updateMsnHistory(); onSpeedChange();
+log('🦅 GARUDA-OPS v4 — ALL BUGS FIXED', 'ok');
+log('✅ No backtracking | ✅ Replan from current pos | ✅ 3D drones | ✅ Return-home', 'inf');
+log('✅ Battery 1200 units | ✅ RTB at 12% | ✅ Numeric speed display', 'mem');
+log('Place obstacle → click button → click any revealed FREE cell on map', 'w');
+setTimeout(openCoord, 700);
+</script>
+</body>
+</html>
